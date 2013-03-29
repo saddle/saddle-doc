@@ -145,7 +145,7 @@ a Vec and a scalar.
   0
   1
 
-  // NB: 2 must be on the RHS, as `+` is a method on Vec
+  // Note: 2 must be on the right hand side, as `+` is a method on Vec
   scala> Vec(1,2,3) + 2
   res7: org.saddle.Vec[Int] =
   [3 x 1]
@@ -359,8 +359,8 @@ Try out the following for yourself:
 
 Note that NA (missing values) are handled within most calculations. Saddle
 tries to prevent accidentally using raw NA values; only two primitive types,
-Float and Double, have NA values that are safe to use in raw form. (Their NA
-representations are Float.NaN and Double.NaN, respectively.)
+Float and Double, have NA values that are safe to use in raw form: their NA
+representations are Float.NaN and Double.NaN, respectively.
 
 .. code:: bash
 
@@ -386,20 +386,20 @@ representations are Float.NaN and Double.NaN, respectively.)
   1
   2
 
-  scala> v.at(1)                    // boxed to prevent shooting yourself in foot
+  scala> v.at(1)                            // boxed to prevent shooting yourself in foot
   res4: org.saddle.scalar.Scalar[Int] = NA
 
-  scala> v.raw(1)                   // you can do this, but be careful!
+  scala> v.raw(1)                           // you can do this, but be careful!
   res5: Int = -2147483648
 
-  scala> v.fillNA(_ => 5)           // ignore argument, which is index of NA
+  scala> v.fillNA(x => x)                   // the argument is the index of the NA
   res6: org.saddle.Vec[Int] =
   [3 x 1]
   1
-  5
+  1
   2
 
-  scala> val d: Double = Scalar(1.0) // you can auto-unbox a double scalar
+  scala> val d: Double = scalar.Scalar(1.0) // you can auto-unbox a double scalar
 
 Also, a Scalar[T] can convert to Option[T] implicitly, so you may do everything
 with it that you may do with an Option; e.g., call map() or flatmap().
