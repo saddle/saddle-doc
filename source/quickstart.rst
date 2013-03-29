@@ -2,12 +2,17 @@ Quick Start Guide
 ~~~~~~~~~~~~~~~~~
 
 Let's take a quick tour through Saddle to get a sense of the feature set. There
-are four major data structures:
+are five major array-backed data structures:
 
-- Vec, a 1D vector object
-- Series, a 1D indexed vector object
-- Mat, a 2D matrix object
-- Frame, a 2D indexed matrix object
+============== ===========
+Type           Description
+-------------- -----------
+Vec            1D vector object
+Mat            2D matrix object
+Series         1D indexed vector object
+Frame          2D indexed matrix object
+Index          Hashmap-like indexer
+============== ===========
 
 All are designed with immutability in mind, although since they are backed by
 arrays and the library tries to be conservative in copying data, you should be
