@@ -2,16 +2,16 @@ Quick Start Guide
 ~~~~~~~~~~~~~~~~~
 
 Let's take a quick tour through Saddle to get a sense of the feature set. There
-are five major array-backed data structures:
+are five major array-backed, specialized data structures:
 
 ============== ===========
-Type           Description
--------------- -----------
-Vec            1D vector object
-Mat            2D matrix object
-Series         1D indexed vector object
-Frame          2D indexed matrix object
-Index          Hashmap-like indexer
+Class          Description
+============== ===========
+Vec            1D vector-like
+Mat            2D matrix-like
+Series         1D indexed vector-like
+Frame          2D indexed matrix-like
+Index          Hashmap-like
 ============== ===========
 
 All are designed with immutability in mind, although since they are backed by
@@ -46,40 +46,11 @@ First, a few ways to create Vec instances:
 .. code:: scala
 
   scala> Vec(1, 2, 3)               // pass a sequence directly
-  res0: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  2
-  3
-
   scala> Vec(1 to 3 : _*)           // pass a sequence indirectly
-  res1: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  2
-  3
-
   scala> Vec(Array(1,2,3))          // wrap an array into a Vec
-  res2: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  2
-  3
-
   scala> Vec(Seq(1,2,3))            // not usually what you want!
-  res3: org.saddle.Vec[Seq[Int]] =
-  [1 x 1]
-  List(1, 2, 3)
-
   scala> Vec(Seq(1,2,3) : _*)       // yes, usually what you want!
-  res3: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  2
-  3
-
   scala> Vec.empty[Double]          // create an empty Vec
-  res4: org.saddle.Vec[Double] = Empty Vec
 
 There are also a few special factories:
 
@@ -107,57 +78,13 @@ a Vec and a scalar.
 .. code:: bash
 
   scala> Vec(1,2,3) + Vec(4,5,6)
-  res0: org.saddle.Vec[Int] =
-  [3 x 1]
-  5
-  7
-  9
-
   scala> Vec(1,2,3) * Vec(4,5,6)
-  res1: org.saddle.Vec[Int] =
-  [3 x 1]
-   4
-  10
-  18
-
   scala> Vec(1,2,3) dot Vec(4,5,6)
-  res2: Int = 32
-
   scala> Vec(1,2,3) outer Vec(4,5,6)
-  res3: org.saddle.Mat[Int] =
-  [3 x 3]
-   4  5  6
-   8 10 12
-  12 15 18
-
   scala> Vec(1,2,3) ** Vec(4,5,6)
-  res4: org.saddle.Vec[Int] =
-  [3 x 1]
-    1
-   32
-  729
-
   scala> Vec(1,2,3) << 2
-  res5: org.saddle.Vec[Int] =
-  [3 x 1]
-   4
-   8
-  12
-
   scala> Vec(1,2,3) & 0x1
-  res6: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  0
-  1
-
-  // Note: 2 must be on the right hand side, as `+` is a method on Vec
-  scala> Vec(1,2,3) + 2
-  res7: org.saddle.Vec[Int] =
-  [3 x 1]
-   3
-   4
-   5
+  scala> Vec(1,2,3) + 2             // Note: 2 must be on right hand side (it's Vec.`+`)
 
 You can also slice out data from a Vec in various ways:
 
@@ -172,47 +99,11 @@ You can also slice out data from a Vec in various ways:
   res1: Double = -0.19816001024987906
 
   scala> v(2,4,8)
-  res2: org.saddle.Vec[Double] =
-  [3 x 1]
-  -0.1982
-   0.8767
-   0.6785
-
   scala> v(2 -> 4)
-  res3: org.saddle.Vec[Double] =
-  [3 x 1]
-  -0.1982
-  -0.0759
-   0.8767
-
   scala> v(* -> 3)
-  res4: org.saddle.Vec[Double] =
-  [4 x 1]
-   0.2856
-   0.0315
-  -0.1982
-  -0.0759
-
   scala> v(8 -> * )
-  res5: org.saddle.Vec[Double] =
-  [2 x 1]
-  0.6785
-  0.2523
-
   scala> v.slice(0,3)
-  res6: org.saddle.Vec[Double] =
-  [3 x 1]
-   0.2856
-   0.0315
-  -0.1982
-
   scala> v.slice(0,8,2)
-  res7: org.saddle.Vec[Double] =
-  [4 x 1]
-   0.2856
-  -0.1982
-   0.8767
-   0.9350
 
 There are statistical functions available:
 
@@ -259,24 +150,14 @@ There are statistical functions available:
   scala> v.demeaned
   scala> v.rank(tie=RankTie.Avg, ascending=true)
 
-As well as a few rolling statistical functions:
+As well as a few specially-implemented rolling statistical functions:
 
 .. code:: bash
 
   scala> val v = vec.rand(10)
 
   scala> v.rollingSum(5)            // with window size = 5
-  res0: org.saddle.Vec[Double] =
-  [6 x 1]
-  -3.5240
-  -2.2592
-  -0.5084
-  -0.0990
-   0.4410
-   0.3806
-
-  // etc...
-  scala> v.rollingMean(5)
+  scala> v.rollingMean(5)           // etc.
   scala> v.rollingMedian(5)
   scala> v.rollingCount(5)
 
@@ -285,70 +166,22 @@ In fact, you can do any calculation you'd like over the rolling window:
 .. code:: bash
 
   scala> v.rolling(5, _.stdev)      // window size = 5, take stdev of vector input
-  res0: org.saddle.Vec[Double] =
-  [6 x 1]
-  0.5456
-  0.3810
-  0.3685
-  0.2678
-  0.6302
-  0.4969
-
 
 Let's take a quick look at some more advanced functionality:
 
 .. code:: bash
 
   scala> val v = vec.rand(10)
-  v: org.saddle.Vec[Double] =
-  [10 x 1]
-  -0.0137
-   0.8427
-  -0.0089
-   0.2083
-   0.9968
-  -0.3560
-  -0.5520
-  -0.2475
-  -0.5036
-  -0.3474
 
-  scala> v filter(_ > 0.5)
-  res0: org.saddle.Vec[Double] =
-  [2 x 1]
-  0.8427
-  0.9968
-
+  scala> v filter(_ > 0.5)          // these three commands are all the same!
   scala> v where v > 0.5
-  res1: org.saddle.Vec[Double] =
-  [2 x 1]
-  0.8427
-  0.9968
-
   scala> v.take(v.find(_ > 0.5))
-  res2: org.saddle.Vec[Double] =
-  [2 x 1]
-  0.8427
-  0.9968
 
   scala> v.filterFoldLeft(_ > 0.5)(0d) { case (acc, d) => acc + d }
-  res3: Double = 1.8394622034464525
 
   scala> v shift 1
-  res4: org.saddle.Vec[Double] =
-  [10 x 1]
-       NA
-  -0.0137
-   0.8427
-  -0.0089
-   0.2083
-   0.9968
-  -0.3560
-  -0.5520
-  -0.2475
-  -0.5036
 
-Try out the following for yourself:
+Try out some of the following for yourself:
 
 .. code:: bash
 
@@ -371,13 +204,8 @@ representations are Float.NaN and Double.NaN, respectively.
 .. code:: bash
 
   scala> val v = Vec(1, na.to[Int], 2)
-  v: org.saddle.Vec[Int] =
-  [3 x 1]
-   1
-  NA
-   2
-
   scala> v sum
+
   res0: Int = 3
 
   scala> v median
@@ -386,11 +214,7 @@ representations are Float.NaN and Double.NaN, respectively.
   scala> v prod
   res2: Int = 2
 
-  scala> v dropNA
-  res3: org.saddle.Vec[Int] =
-  [2 x 1]
-  1
-  2
+  scala> v dropNA                           // becomes [1 2]
 
   scala> v.at(1)                            // boxed to prevent shooting yourself in foot
   res4: org.saddle.scalar.Scalar[Int] = NA
@@ -398,12 +222,7 @@ representations are Float.NaN and Double.NaN, respectively.
   scala> v.raw(1)                           // you can do this, but be careful!
   res5: Int = -2147483648
 
-  scala> v.fillNA(x => x)                   // the argument is the index of the NA
-  res6: org.saddle.Vec[Int] =
-  [3 x 1]
-  1
-  1
-  2
+  scala> v.fillNA(x => x)                   // becomes [1 1 2]; the argument is the index of the NA
 
   scala> val d: Double = scalar.Scalar(1.0) // you can auto-unbox a double scalar
 
@@ -429,13 +248,6 @@ Vec[T] can convert implicitly to a Series[Int, T]. So for instance:
 .. code:: bash
 
   scala> val x: Series[Int, Double] = vec.rand(5)
-  x: org.saddle.Series[Int,Double] =
-  [5 x 1]
-  0 -> -0.7846
-  1 ->  0.0297
-  2 -> -0.2634
-  3 -> -0.0976
-  4 ->  0.1756
 
 The key type of a must have a natural ordering (ie, an Ordering of that type
 within the implicit scope). However, the Series maintains the order in which
@@ -446,12 +258,12 @@ Let's look at a few constructions:
 .. code:: bash
 
   // we already know we can convert a Vec
-  scala> Series(Vec("a", "b", "c"))
+  scala> Series(Vec(32, 12, 9))
   res3: org.saddle.Series[Int,java.lang.String] =
   [3 x 1]
-  0 -> a
-  1 -> b
-  2 -> c
+  0 -> 32
+  1 -> 12
+  2 -> 9
 
   // we can pass a pair of tuples
   scala> Series("a" -> 1, "b" -> 2, "c" -> 3)
@@ -503,7 +315,7 @@ of a Series.
   res20: org.saddle.scalar.Scalar[Int] = 3
 
   scala> q.at(2,3,1)
-  res0: org.saddle.Vec[Int] = 
+  res0: org.saddle.Vec[Int] =
   [3 x 1]
   2
   4
@@ -978,3 +790,24 @@ Finally, if you want to print, say, 100 rows and 10 columns:
 
 Frame
 -----
+
+A Frame combines a Mat with a row index and a column index which provides a way
+to index into the Mat. First, note a Mat[T] converts implicitly to a Frame[Int,
+Int, T]. So for instance
+
+.. code:: bash
+
+  scala> val f: Frame[Int, Int, Double] = mat.rand(2, 2)
+
+A Frame is represented internally as a sequence of column Vec instances all
+sharing the same row index; additionally a transpose of the data is created
+lazily if cross sections of data are requested.
+
+Let's look at some ways to instantiated a Frame:
+
+.. code:: bash
+
+
+
+
+
