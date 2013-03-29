@@ -9,13 +9,13 @@ are four major data structures:
 - Mat, a 2D matrix object
 - Frame, a 2D indexed matrix object
 
-All are designed with immutability in mind, although since they are backed by arrays
-and the library tries to be conservative in copying data, you should be careful not
-to let the backing arrays escape object construction.
+All are designed with immutability in mind, although since they are backed by
+arrays and the library tries to be conservative in copying data, you should be
+careful not to let the backing arrays escape object construction.
 
-Let's look at each one in turn through examples. If you've got the source code and an
-SBT launcher, run the following (from the directory where you've got Saddle checked
-out):
+Let's look at each one in turn through examples. If you've got the source code
+and an SBT launcher, run the following (from the directory where you've got
+Saddle checked out):
 
 .. code:: bash
 
@@ -27,8 +27,9 @@ If you've only got the Saddle jar in your classpath, the relevant import is:
 
   import org.saddle._
 
-Note: by default, toString will print up to some number of data entries. If you would like
-to see more data, simply call the print() method on the relevant object with a larger number.
+Note: by default, toString will print up to some number of data entries. If you
+would like to see more data, simply call the print() method on the relevant
+object with a larger number.
 
 Vec
 ---
@@ -405,8 +406,8 @@ Also, a Scalar[T] can convert to Option[T] implicitly, so you may do everything
 with it that you may do with an Option; e.g., call map() or flatmap().
 
 Finally, if you need to treat a Vec as a sequence, you may convert it to Seq,
-(specifically, an IndexedSeq). Also, you may access (a copy of) Vec as an array,
-by calling Vec.contents.
+(specifically, an IndexedSeq). Also, you may access (a copy of) Vec as an
+array, by calling Vec.contents.
 
 .. code:: bash
 
@@ -416,9 +417,9 @@ by calling Vec.contents.
 Series
 ------
 
-A Series combines a Vec with an Index that provides an ordered key-value mapping.
-We'll talk more about the details of Index later.  First, note a Vec[T] can convert
-implicitly to a Series[Int, T]. So for instance:
+A Series combines a Vec with an Index that provides an ordered key-value
+mapping.  We'll talk more about the details of Index later.  First, note a
+Vec[T] can convert implicitly to a Series[Int, T]. So for instance:
 
 .. code:: bash
 
@@ -431,9 +432,9 @@ implicitly to a Series[Int, T]. So for instance:
   3 -> -0.0976
   4 ->  0.1756
 
-The key type of a must have a natural ordering (ie, an Ordering of that type within
-the implicit scope). However, the Series maintains the order in which its data was
-supplied unless ordered othewise.
+The key type of a must have a natural ordering (ie, an Ordering of that type
+within the implicit scope). However, the Series maintains the order in which
+its data was supplied unless ordered othewise.
 
 Let's look at a few constructions:
 
@@ -481,8 +482,8 @@ Let's look at a few constructions:
   a -> 3
   b -> 4
 
-With construction out of the way, let's look at a few ways
-we can get data out of a Series.
+With construction out of the way, let's look at a few ways we can get data out
+of a Series.
 
 .. code:: bash
 
@@ -671,8 +672,8 @@ themselves are Series. For example:
   a ->  0.0000
   b ->  0.5000
 
-You can also group by another index, or by a transformation of the current index,
-by passing an argument into groupBy. See the Saddle API for more info.
+You can also group by another index, or by a transformation of the current
+index, by passing an argument into groupBy. See the Saddle API for more info.
 
 The expressive nature of working with Series becomes apparent when you need to
 align data:
@@ -692,9 +693,9 @@ align data:
   e -> NA
   f -> NA
 
-You see that the indexes have been aligned prior to operation being performed. Because
-there is a missing observation in each label of a, e, and f, the summation is not done
-and instead an NA value is inserted into the result.
+You see that the indexes have been aligned prior to operation being performed.
+Because there is a missing observation in each label of a, e, and f, the
+summation is not done and instead an NA value is inserted into the result.
 
 Generally, a full-outer join is performed. So, for instance:
 
@@ -713,11 +714,11 @@ Generally, a full-outer join is performed. So, for instance:
   b ->  4
   d -> NA
 
-Most basic math and boolean operations are supported between two Series, as well as between
-a Series and a scalar value.
+Most basic math and boolean operations are supported between two Series, as
+well as between a Series and a scalar value.
 
-We mentioned joins. Let's look at a few join operations; the result is a Frame, which we will
-touch on a bit later. These are similar in nature to SQL joins.
+We mentioned joins. Let's look at a few join operations; the result is a Frame,
+which we will touch on a bit later. These are similar in nature to SQL joins.
 
 .. code:: bash
 
@@ -777,8 +778,8 @@ Finally, let's take a look at a multiply indexed Series:
   2 1 -> 3
     2 -> 4
 
-Sometimes you want to move the innermost row label to be a column label instead.
-You can achieve this as follows:
+Sometimes you want to move the innermost row label to be a column label
+instead. You can achieve this as follows:
 
 .. code:: bash
 
@@ -808,9 +809,8 @@ Mat
 ---
 
 A Mat[T] represents a Matrix of values. Internally it is stored as a single
-contiguous array; sometimes, a duplicate array is created which stores the
-same values, but transposed, for speed of access having to do with memory
-locality.
+contiguous array; sometimes, a duplicate array is created which stores the same
+values, but transposed, for speed of access having to do with memory locality.
 
 This format was chosen to be compatible with DenseMatrix of EJML_, a high
 performance linear algebra library which provides the default matrix multiply
@@ -844,8 +844,8 @@ Let's start off with construction:
   // zeros:
   scala> Mat[Int](2, 2)
 
-Again, sometimes we want to create instances filled with random observations. As
-to Vec, we can do the following:
+Again, sometimes we want to create instances filled with random observations.
+As to Vec, we can do the following:
 
 .. code:: bash
 
