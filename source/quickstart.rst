@@ -807,6 +807,27 @@ Let's look at some ways to instantiated a Frame:
 
 .. code:: bash
 
+  scala> Frame(Vec(1,2,3), Vec(4,5,6))                  // two-column frame
+
+  scala> Frame("x" -> Vec(1,2,3), "y" -> Vec(4,5,6))    // with column index
+
+  scala> val s = Series("a" -> 1, "b" -> 2)
+  scala> val t = Series("b" -> 3, "c" -> 4)
+  scala> Frame(s, t)                                    // aligned along rows
+  [3 x 2]
+        0  1
+       -- --
+  a ->  1 NA
+  b ->  2  3
+  c -> NA  4
+
+  scala> Frame("x" -> s, "y" -> t)                      // with column index
+  [3 x 2]
+        x  y
+       -- --
+  a ->  1 NA
+  b ->  2  3
+  c -> NA  4
 
 
 
