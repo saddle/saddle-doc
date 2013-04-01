@@ -807,12 +807,15 @@ Let's look at some ways to instantiated a Frame:
 
 .. code:: bash
 
-  scala> Frame(Vec(1,2,3), Vec(4,5,6))                  // two-column frame
-
-  scala> Frame("x" -> Vec(1,2,3), "y" -> Vec(4,5,6))    // with column index
-
+  scala> val v = Vec(1, 2)                              // given the following
+  scala> val u = Vec(3, 4)
   scala> val s = Series("a" -> 1, "b" -> 2)
   scala> val t = Series("b" -> 3, "c" -> 4)
+
+  scala> Frame(v, u)                                    // two-column frame
+
+  scala> Frame("x" -> v, "y" -> u)                      // with column index
+
   scala> Frame(s, t)                                    // aligned along rows
   [3 x 2]
         0  1
@@ -828,6 +831,77 @@ Let's look at some ways to instantiated a Frame:
   a ->  1 NA
   b ->  2  3
   c -> NA  4
+
+  scala> Frame(Seq(s, t), Index("x", "y"))              // explicit column index
+
+  scala> Frame(Seq(v, u), Index(0, 1), Index("x", "y")) // row & col indexes specified explicitly
+
+  scala> Frame(Seq(v, u), Index("a", "b"))              // col index specified
+
+You'll notice that if an index is not provided, a default int index is given
+where the index ranges between 0 and the length of the data.
+
+If you want to set or reset the index, these methods are your friends:
+
+.. code:: bash
+
+  scala> val f = Frame("x" -> s, "y" -> t)
+
+  scala> f.setRowIndex(Index(10, 20))
+  scala> f.setColIndex(Index("p", "q"))
+  scala> f.resetRowIndex()
+  scala> f.resetColIndex()
+
+You also have the following index transformation tools at hand:
+
+.. code:: bash
+
+  f.mapRowIndex { case rx => ... }
+  f.mapColIndex { case cx => ... }
+
+Let's next look at how to extract data from the Frame.
+
+.. code:: bash
+
+  scala> f.rowAt(2)    // extract row at offset 2, as Series
+  scala> f.rowAt(1,2)  // extract frame of rows 1 & 2
+  scala> f.colAt(1)    // extract col at offset 1, as Series
+  scala> f.colAt(0,1)  // extract frame of cols 1 & 2
+
+These are used under the hood for the `at` extractor:
+
+.. code:: bash
+
+  scala> f.at(1,1)              // Scalar value
+  scala> f.at(Array(1,2), 0)    // extract rows 1,2 of column 0
+  scala> f.at(0->1, 1)          // extract rows 0,1 of column 1
+  scala> f.at(0->1, 0->1)       // extract rows 0,1 of columns 0, 1
+  // etc...
+
+Of course, this is an indexed data structure, so we can use its indexes to
+select out data:
+
+.. code:: bash
+
+  scala> f.row("a")             // row 'a', with all columns
+  scala> f.col("x")             // col 'x', with all rows
+  scala> f.row("a", "c")        // select two rows
+  scala> f.row("a"->"b")        // slice two rows (index must be sorted)
+  scala> f.row(Vec("a", "c"))   // another way to select
+
+The `row` and `col` methods are used under the hood for the `apply` method:
+
+.. code:: bash
+
+  scala> f("a" ,"x")             // one-element frame
+  scala> f("a"->"b", "x")        // two-row, one-column frame
+  scala> f(Vec("a", "c"), "x")   // same as above, but extracting, not slicing
+
+Any methods of extracting rows shown above can of course be done on columns as
+well.
+
+
+
 
 
 
