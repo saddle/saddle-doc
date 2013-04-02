@@ -95,7 +95,7 @@ You can also slice out data from a Vec in various ways:
   scala> v.at(2)                        // wrapped in Scalar, in case of NA
   res0: org.saddle.scalar.Scalar[Double] = -0.19816001024987906
 
-  scala> v.raw(2)                       // raw access to primitive type
+  scala> v.raw(2)                       // raw access to primitive type; be careful!
   res1: Double = -0.19816001024987906
 
   scala> v(2,4,8)
@@ -462,7 +462,8 @@ Try the following:
   scala> q.splitAt(2)
   scala> q.sortedIx.splitBy("b")
 
-We can of course convert to a Vec or a Seq if we need to:
+We can of course convert to a Vec or a Seq if we need to. The Series.toSeq
+method yields a sequence of key/value tuples.
 
 .. code:: bash
 
@@ -838,10 +839,34 @@ Let's look at some ways to instantiated a Frame:
 
   scala> Frame(Seq(v, u), Index("a", "b"))              // col index specified
 
-You'll notice that if an index is not provided, a default int index is given
+You'll notice that if an index is not provided, a default int index is set
 where the index ranges between 0 and the length of the data.
 
-If you want to set or reset the index, these methods are your friends:
+Frame elements are all recognized as the same type by the compiler. But if you
+want to work with frames whose columns contain heterogenous data, there are a
+few facilities to make it easier. You can construct Frame[_, _, Any] using the
+Panel() constructor, which mirrors the Frame() constructor, eg:
+
+.. code:: bash
+
+  scala> val p = Panel(Vec(1,2,3), Vec("a","b","c"))
+
+You may then extract columns of a particular type as follows:
+
+.. code:: bash
+
+  scala> p.colType[Int]
+  scala> p.colType[Int, String]
+
+Speaking of types, if you want to generate an empty row or column of the right type:
+
+.. code:: bash
+
+  scala> f.emptyRow
+  scala> f.emptyCol
+
+Back to homogenous Frames. If you want to set or reset the index, these methods
+are your friends:
 
 .. code:: bash
 
@@ -851,6 +876,8 @@ If you want to set or reset the index, these methods are your friends:
   scala> f.setColIndex(Index("p", "q"))
   scala> f.resetRowIndex()
   scala> f.resetColIndex()
+
+(Note: frame ``f`` will carry through the next examples.)
 
 You also have the following index transformation tools at hand:
 
@@ -865,10 +892,13 @@ Let's next look at how to extract data from the Frame.
 
   scala> f.rowAt(2)    // extract row at offset 2, as Series
   scala> f.rowAt(1,2)  // extract frame of rows 1 & 2
+  scala> f.rowAt(1->2) // extract frame of rows 1 & 2
+
   scala> f.colAt(1)    // extract col at offset 1, as Series
   scala> f.colAt(0,1)  // extract frame of cols 1 & 2
+  scala> f.colAt(0->1) // extract frame of cols 1 & 2
 
-These are used under the hood for the `at` extractor:
+``rowAt`` and ``colAt`` are used under the hood for the ``at`` extractor:
 
 .. code:: bash
 
@@ -878,31 +908,301 @@ These are used under the hood for the `at` extractor:
   scala> f.at(0->1, 0->1)       // extract rows 0,1 of columns 0, 1
   // etc...
 
-Of course, this is an indexed data structure, so we can use its indexes to
-select out data:
+If you want more control over slicing, you can use these methods:
 
 .. code:: bash
 
-  scala> f.row("a")             // row 'a', with all columns
-  scala> f.col("x")             // col 'x', with all rows
+  scala> f.colSlice(0,1)        // frame slice consisting of column 0
+  scala> f.rowSlice(0,3,2)      // row slice from 0 until 3, striding by 2
+
+Of course, this is an bi-indexed data structure, so we can use its indexes to
+select out data using keys:
+
+.. code:: bash
+
+  scala> f.row("a")             // row series 'a', with all columns
+  scala> f.col("x")             // col series 'x', with all rows
   scala> f.row("a", "c")        // select two rows
   scala> f.row("a"->"b")        // slice two rows (index must be sorted)
   scala> f.row(Vec("a", "c"))   // another way to select
 
-The `row` and `col` methods are used under the hood for the `apply` method:
+A more explict way to slice with keys is as follows, and you can specify
+whether the right bound is inclusive or exclusive. Again, to slice, the index
+keys must be ordered.
 
 .. code:: bash
 
-  scala> f("a" ,"x")             // one-element frame
+  scala> f.rowSliceBy("a", "b", inclusive=false)
+  scala> f.colSliceBy("x", "x", inclusive=true)
+
+The ``row`` and ``col`` methods are used under the hood for the ``apply`` method:
+
+.. code:: bash
+
+  scala> f("a", "x")             // extract a one-element frame by keys
   scala> f("a"->"b", "x")        // two-row, one-column frame
   scala> f(Vec("a", "c"), "x")   // same as above, but extracting, not slicing
 
-Any methods of extracting rows shown above can of course be done on columns as
-well.
+The methods of extracting multiple rows shown above can of course be done on
+columns as well.
 
+You can also split up the Frame by key or index:
 
+.. code:: bash
 
+  scala> f.colSplitAt(1)          // split into two frames at column 1
+  scala> f.colSplitBy("y")
 
+  scala> f.rowSplitAt(1)
+  scala> f.rowSplitBy("b")
 
+You extract some number of rows or columns:
 
+.. code:: bash
+
+  scala> f.head(2)                // operates on rows
+  scala> f.tail(2)
+  scala> f.headCol(1)             // operates on cols
+  scala> f.tailCol(1)
+
+Or the first & last of some key (which is helpful when you've got a multi-key
+index):
+
+.. code:: bash
+
+  scala> f.first("b")              // first row indexed by "b" key
+  scala> f.last("b")               // last row indexed by "b" key
+  scala> f.firstCol("x")
+  scala> f.lastCol("x")
+
+There are a few other methods of extracting data:
+
+.. code:: bash
+
+  scala> f.filter { case s => s.mean > 2.0 }  // any column whose series satisfies predicate
+  scala> f.filterIx { case x => x == "x" }    // col where index matches key "x"
+  scala> f.where(Vec(false, true))            // extract second column
+
+There are analogous methods to operate on rows rather then columns:
+
+- ``rfilter``
+- ``rfilterIx``
+- ``rwhere``
+
+etc... in general, methods operate on a column-wise basis, whereas the
+``r``-counterpart does so on a row-wise basis.
+
+You can drop cols (rows) containing *any* NA values:
+
+.. code:: bash
+
+  scala> f.dropNA
+  scala> f.rdropNA
+
+Let's take a look at some operations we can do with Frames. We can do all the
+normal binary math operations with Frames, with either a scalar value or with
+another Frame. When two frames are involved, they are reindexed along both axes
+to match the outer join of their indices, but any missing observation in either
+will carry through the calculations.
+
+.. code:: bash
+
+  scala> f + 1
+  scala> f * f
+  scala> val g = Frame("y"->Series("b"->5, "d"->10))
+  scala> f + g                      // one non-NA entry, ("b", "y", 8)
+
+You can effectively supply your own binary frame operation using joinMap, which
+lets you control the join style on rows and columns:
+
+.. code:: bash
+
+  scala> f.joinMap(g, rhow=index.LeftJoin, chow=index.LeftJoin) { case (x, y) => x + y }
+
+If you want simply to align one frame to another without performing an operation,
+use the following method:
+
+.. code:: bash
+
+  scala> val (fNew, gNew) = f.align(g, rhow=index.LeftJoin, chow=index.OuterJoin)
+
+If you want to treat a Frame as a matrix to use in linear algebraic fashion,
+call the ``toMat`` method.
+
+We can sort a frame in various ways:
+
+.. code:: bash
+
+  scala> f.sortedRIx                // sorted by row index
+  scala> f.sortedCIx                // sorted by col index
+  scala> f.sortedRows(0,1)          // sort rows by (primary) col 0 and (secondary) col 1
+  scala> f.sortedCols(1,0)          // sort cols by (primary) row 1 and (secondary) row 0
+
+We can also sort by an ordering provided by the result of a function acting on
+rows or cols:
+
+.. code:: bash
+
+  scala> f.sortedRowsBy { case r => r.at(0) }   // sort rows by first element of row
+  scala> f.sortedColsBy { case c => c.at(0) }   // sort cols by first element of col
+
+There are several mapping functions:
+
+.. code:: bash
+
+  scala> f.mapValues { case t => t + 1 }        // add one to each element of frame
+  scala> f.mapVec { case v => v.demeaned }      // map over each col vec of the frame
+  scala> f.reduce { case s => s.mean }          // collapse each col series to a single value
+  scala> f.transform { case s => s.reversed }   // transform each series; outerjoin results
+
+We can mask out values:
+
+.. code:: bash
+
+  scala> f.mask(_ > 2)                          // mask out values > 2
+  scala> f.mask(Vec(false, true, true))         // mask out rows 1 & 2 (keep row 0)
+
+Columns (rows) containing *only* NA values can be dropped as follows:
+
+.. code:: bash
+
+  scala> f.mask(Vec(true, false, false)).rsqueeze   // drop rows containing NA values
+  scala> f.rmask(Vec(false, true)).squeeze          // takes "x" column
+
+We can groupBy in order to combine or transform:
+
+.. code:: bash
+
+  scala> f.groupBy(_ == "a").combine(_.count)       // # obs in each column that have/not row key "a"
+  scala> f.groupBy(_ == "a").transform(_.demeaned)  // contrived, but you get the idea hopefully!
+
+We can join against another frame, or against a series:
+
+.. code:: bash
+
+  scala> f.join(g, how=index.LeftJoin)              // left joins on row index, drops col indexes
+  scala> f.join(s, how=index.LeftJoin)              // implicitly promotes s to Frame
+  scala> f.joinS(s, how=index.LeftJoin)             // use Series directly
+
+Btw, to join a Frame to a series, the call looks like this:
+
+.. code:: bash
+
+  scala> s.joinF(g, how=index.LeftJoin)
+
+Of course, if you want to join along the column index instead, there is a
+``rjoin`` method.
+
+Let's look at a few data reshaping commands. Try the following:
+
+.. code:: bash
+
+  scala> f.melt
+  scala> f.melt.mapRowIndex { case (a, b) => (b, a) } colAt(0) pivot
+  scala> f.mapColIndex { case c => (1, c) } stack
+  scala> f.mapRowIndex { case r => (1, r) } unstack
+
+There are statistics available on Frames on a column-wise basis that are
+NA-aware. They are provided via an implicit conversion to ``FrameStats``; look
+there to see what's available.
+
+Finally, note that ``toSeq`` converts a Frame to a sequence of (row, col,
+value) triples.
+
+Index
+=====
+
+Index provides constant-time lookup of a value within array-backed storage, and
+support for joining and slice operations. There are a few factory methods for
+creating an Index:
+
+.. code:: bash
+
+  scala> Index("a", "b", "c")           // from seq of values
+  scala> Index(Vec("a", "b", "c"))      // from vec
+  scala> Index(Array("a", "b", "c"))    // from array
+
+To create a multi-level index, you may do the following. In this example, the
+Index is comprised of (1,a), (2,b), and (3,c):
+
+.. code:: bash
+
+  scala> Index.make(Vec(1, 2, 3), Vec("a", "b", "c"))
+
+You likely do not want to utilize the methods of Index directly very often, but
+rather attach them to data (in Series and Frames) to achieve your goals in a
+more indirect manner. Still, there are a few useful tools:
+
+.. code:: bash
+
+  scala> val x = Index("a", "a", "b", "b", "c", "c")
+  scala> val x.next("a")                                // returns "b"
+  scala> val x.prev("b")                                // returns "a"
+
+For next and prev to work, the Index must be contiguous in values, although
+sortedness is unnecessary. By contiguous, we mean a-b-a-b would not be a valid
+ordering of data, but a-a-b-b would be.
+
+For Index instances with Set semantics (ie, no duplicate keys), you have
+fast ``union`` and ``intersect`` methods.
+
+For map-like functionality, there is ``contains`` and ``exists``, although
+since Index is really a multi-map, the ``get`` function returns an array of
+locations within the backing array, and ``count`` gives you how many entries
+exist for a particular key. ``uniques`` allows you to get all the unique keys,
+and the methods ``getFirst`` and ``getLast`` retrieve the location offsets of a
+particular key. The API is worth exploring further.
+
+I/O
+===
+
+The ``org.saddle.io._`` module provides some basic, and not-so-basic, I/O
+functionality, although there is still much to be developed. There is a fast
+parallel csv file reader which you may access as follows:
+
+.. code:: bash
+
+  scala> val csvfile = CsvFile("/tmp/file.csv")
+  scala> CsvParser.parsePar(CsvParser.parseDouble, List(1,2))(csvfile)
+
+There is also HDF5 reading/writing available for Series and Frame objects that
+is essentially compatible with the basic pandas format (as of version 0.9).
+Note that it only supports certain primitive types like Int/Long/Double, and
+DateTime objects, but not all Serializable java classes.
+
+Utilities
+=========
+
+There some neat helper functions in the ``org.saddle.array._`` module to work
+with arrays of primitives:
+
+- range
+- shuffle
+- tile
+- random array generators
+- linspace
+- filter
+- flatten
+- argsort
+- argmin, argmax
+
+The ``org.saddle.util.Random`` class provides a xorshift Marsiglia primitive
+value pseudorandom number generator the underlies the random number
+generation throughout Saddle.
+
+Finally, the ``org.saddle.time._`` module provides a helpful constructor for
+joda DateTime objects, ``datetime``, and for doing fast manipulations on Vec
+and Index instances of type DateTime via implicit conversion to TimeAccessors.
+
+A note on optimization
+======================
+
+The data structures above attempt to operate on primitives whenever possible,
+although the specialization is not to every primitive JVM data type as of yet.
+For example, ``Vec`` is specialized on Boolean, Int, Long, and Double; but not
+yet Float, yet, so Vec[Float] operations will (un)box.
+
+Try to avoid looping through these structures; they were meant for terse lines
+of code which operate in a vectorized manner. If you find yourself looping
+through them, you're probably doing it wrong!
 
